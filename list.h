@@ -1,12 +1,73 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
-
+/*
 #include <linux/types.h>
 #include <linux/stddef.h>
 #include <linux/poison.h>
 #include <linux/const.h>
 #include <linux/kernel.h>
+*/
+
+// import from types.h
+struct list_head {
+    struct list_head *next, *prev;
+};
+
+struct hlist_head {
+    struct hlist_node *first;
+};
+
+struct hlist_node {
+    struct hlist_node *next, **pprev;
+};
+
+// import from poison.h
+
+/*
+ * Architectures might want to move the poison pointer offset
+ * into some well-recognized area such as 0xdead000000000000,
+ * that is also not mappable by user-space exploits:
+ */
+#ifdef CONFIG_ILLEGAL_POINTER_VALUE
+# define POISON_POINTER_DELTA _AC(CONFIG_ILLEGAL_POINTER_VALUE, UL)
+#else
+# define POISON_POINTER_DELTA (0)
+#endif
+
+/*
+ * These are non-NULL pointers that will result in page faults
+ * under normal circumstances, used to verify that nobody uses
+ * non-initialized list entries.
+ */
+#define LIST_POISON1  ((void *) 0x00100100 + POISON_POINTER_DELTA)
+#define LIST_POISON2  ((void *) 0x00200200 + POISON_POINTER_DELTA)
+
+// import from stddef.h
+#undef offsetof
+#ifdef __compiler_offsetof
+#define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
+#else
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
+// import from kernel.h
+#define BUILD_BUG_ON_MSG(cond, msg) (0) //import from build_bug.h
+
+/**
+ * container_of - cast a member of a structure out to the containing structure
+ * @ptr:	the pointer to the member.
+ * @type:	the type of the container struct this is embedded in.
+ * @member:	the name of the member within the struct.
+ *
+ */
+#define container_of(ptr, type, member) ({				\
+	void *__mptr = (void *)(ptr);					\
+	BUILD_BUG_ON_MSG(!__same_type(*(ptr), ((type *)0)->member) &&	\
+			 !__same_type(*(ptr), void),			\
+			 "pointer type mismatch in container_of()");	\
+	((type *)(__mptr - offsetof(type, member))); })
+
 
 /*
  * Simple doubly linked list implementation.
@@ -25,7 +86,8 @@
 
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
-	WRITE_ONCE(list->next, list);
+	//WRITE_ONCE(list->next, list);
+	list->next = list;//revised
 	list->prev = list;
 }
 
@@ -63,7 +125,8 @@ static inline void __list_add(struct list_head *new,
 	next->prev = new;
 	new->next = next;
 	new->prev = prev;
-	WRITE_ONCE(prev->next, new);
+	//WRITE_ONCE(prev->next, new);
+	prev->next = new;//revised
 }
 
 /**
@@ -103,7 +166,8 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
 static inline void __list_del(struct list_head * prev, struct list_head * next)
 {
 	next->prev = prev;
-	WRITE_ONCE(prev->next, next);
+	//WRITE_ONCE(prev->next, next);
+	prev->next = next;//revised
 }
 
 /**
@@ -200,7 +264,8 @@ static inline int list_is_last(const struct list_head *list,
  */
 static inline int list_empty(const struct list_head *head)
 {
-	return READ_ONCE(head->next) == head;
+	//return READ_ONCE(head->next) == head;
+	return head->next == head;//revised
 }
 
 /**
@@ -397,10 +462,15 @@ static inline void list_splice_tail_init(struct list_head *list,
  */
 #define list_first_entry_or_null(ptr, type, member) ({ \
 	struct list_head *head__ = (ptr); \
-	struct list_head *pos__ = READ_ONCE(head__->next); \
+	struct list_head *pos__ = head__->next; \
 	pos__ != head__ ? list_entry(pos__, type, member) : NULL; \
 })
-
+/*
+* replace 
+* struct list_head *pos__ = READ_ONCE(head__->next); 
+* with 
+* struct list_head *pos__ = head__->next;
+*/
 /**
  * list_next_entry - get the next element in list
  * @pos:	the type * to cursor
@@ -638,7 +708,8 @@ static inline int hlist_unhashed(const struct hlist_node *h)
 
 static inline int hlist_empty(const struct hlist_head *h)
 {
-	return !READ_ONCE(h->first);
+	//return !READ_ONCE(h->first);
+	return !(h->first);//revised
 }
 
 static inline void __hlist_del(struct hlist_node *n)
@@ -646,7 +717,8 @@ static inline void __hlist_del(struct hlist_node *n)
 	struct hlist_node *next = n->next;
 	struct hlist_node **pprev = n->pprev;
 
-	WRITE_ONCE(*pprev, next);
+	//WRITE_ONCE(*pprev, next);
+	*pprev = next;//revised
 	if (next)
 		next->pprev = pprev;
 }
@@ -672,7 +744,8 @@ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 	n->next = first;
 	if (first)
 		first->pprev = &n->next;
-	WRITE_ONCE(h->first, n);
+	//WRITE_ONCE(h->first, n);
+	h->first = n;//revised
 	n->pprev = &h->first;
 }
 
@@ -683,14 +756,16 @@ static inline void hlist_add_before(struct hlist_node *n,
 	n->pprev = next->pprev;
 	n->next = next;
 	next->pprev = &n->next;
-	WRITE_ONCE(*(n->pprev), n);
+	//WRITE_ONCE(*(n->pprev), n);
+	*(n->pprev) = n;//revised
 }
 
 static inline void hlist_add_behind(struct hlist_node *n,
 				    struct hlist_node *prev)
 {
 	n->next = prev->next;
-	WRITE_ONCE(prev->next, n);
+	//WRITE_ONCE(prev->next, n);
+	prev->next = n;//revised
 	n->pprev = &prev->next;
 
 	if (n->next)
