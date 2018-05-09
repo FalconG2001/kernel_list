@@ -187,8 +187,8 @@ static inline void __list_del_entry(struct list_head *entry)
 static inline void list_del(struct list_head *entry)
 {
 	__list_del_entry(entry);
-	entry->next = LIST_POISON1;
-	entry->prev = LIST_POISON2;
+	//entry->next = LIST_POISON1;
+	//entry->prev = LIST_POISON2;
 }
 
 /**
