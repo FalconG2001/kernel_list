@@ -18,13 +18,13 @@ void print_list(struct list_head *head) {
     
     list_for_each(listptr, head) {
         entry = list_entry(listptr, struct mylist, link);
-        printf("%s", entry->str);
+        printf("%s\n", entry->str);
     }
 }
 
 // compare two string
 int str_compare(char *a, char *b, int str_length) {
-	for(int i = 0; i < str_length - 1; i++) {
+	for(int i = 0; i < str_length; i++) {
 		if(a[i] == b[i]) continue;
 		return b[i] - a[i];
 	}
@@ -69,14 +69,13 @@ void read_file(struct list_head *head, FILE *fp) {
 			break;
 		}
 		
-		cp[str_length] = c;
-		str_length++;
 		
 		if(c == '\n') {
+			cp[str_length] = '\0';
 			// add element to list
 			struct mylist *new = malloc(sizeof(struct mylist));
-			(*new).str_length = str_length;
-			(*new).str = cp;
+			new->str_length = str_length;
+			new->str = cp;
 			add_sort(head, new);
 			
 			// initialize
@@ -85,6 +84,9 @@ void read_file(struct list_head *head, FILE *fp) {
 			cp = (char*) malloc(buf_length * sizeof(char));
 			continue;
 		}
+		
+		cp[str_length] = c;
+		str_length++;
 		
 		// double the buf size if length of string is bigger than buf
 		if(buf_length == str_length){
@@ -102,6 +104,7 @@ void free_list(struct list_head *head)
     list_for_each(listptr, head) {
         entry = list_entry(listptr, struct mylist, link);
         list_del(&entry->link);
+        free(entry->str);
         free(entry);
     }
 }
