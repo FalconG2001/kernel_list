@@ -8,7 +8,7 @@
 struct mylist{
 	char *str;
 	int str_length;
-	struct list_head link;
+	struct list_head list;
 };
 
 // print each element
@@ -16,25 +16,17 @@ void print_list(struct list_head *head) {
     struct list_head *listptr;
     struct mylist *entry;
     
-    list_for_each(listptr, head) {
-        entry = list_entry(listptr, struct mylist, link);
+    list_for_each_entry(entry, head, list) {
         printf("%s\n", entry->str);
     }
 }
 
-// compare two string
-int str_compare(char *a, char *b, int str_length) {
-	for(int i = 0; i < str_length; i++) {
-		if(a[i] == b[i]) continue;
-		return b[i] - a[i];
-	}
-}
 
-// add element to list and sorting
-void add_sort(struct list_head *head, struct mylist *new) {
-	// insert directly if list is empty
+// add entry to list
+void add_entry(struct list_head *head, struct mylist *new) {
+	// add new entry directly if list is empty
 	if(list_empty(head)) {
-		list_add(&new->link, head);
+		list_add(&new->list, head);
 		return;
 	}
 	
@@ -43,19 +35,22 @@ void add_sort(struct list_head *head, struct mylist *new) {
 	struct mylist *entry;
 
 	list_for_each(listptr, head) {
-		entry = list_entry(listptr, struct mylist, link);
+		entry = list_entry(listptr, struct mylist, list);
+		// add new entry before current entry if length of current entry is larger than length of new entry
 		if(new->str_length < entry->str_length) {
-			__list_add(&new->link, (&entry->link)->prev, &entry->link);
+			list_add_tail(&new->list, &entry->list);
 			return;
 		} 
+		// do string compare if two strings have same length
 		else if(entry->str_length == new->str_length) {
-			if(str_compare(new->str, entry->str, new->str_length) > 0) {
-				__list_add(&new->link, (&entry->link)->prev, &entry->link);
+			if(strcmp(new->str, entry->str) <= 0) {
+				list_add_tail(&new->list, &entry->list);
 				return;
 			}
 		}
 	}
-	list_add_tail(&new->link, head);
+	// add new entry to the last since it is the latgest number
+	list_add_tail(&new->list, head);
 }
 
 // read file content
@@ -76,7 +71,7 @@ void read_file(struct list_head *head, FILE *fp) {
 			struct mylist *new = malloc(sizeof(struct mylist));
 			new->str_length = str_length;
 			new->str = cp;
-			add_sort(head, new);
+			add_entry(head, new);
 			
 			// initialize
 			buf_length = 2;
@@ -102,8 +97,8 @@ void free_list(struct list_head *head)
     struct mylist *entry;
     
     list_for_each(listptr, head) {
-        entry = list_entry(listptr, struct mylist, link);
-        list_del(&entry->link);
+        entry = list_entry(listptr, struct mylist, list);
+        list_del(&entry->list);
         free(entry->str);
         free(entry);
     }
@@ -111,7 +106,7 @@ void free_list(struct list_head *head)
 
 int main()
 {
-	LIST_HEAD(head);
+	LIST_HEAD(head); //create head and initialize
 	
 	FILE *fp = stdin;
 	/*
