@@ -78,13 +78,18 @@ int main()
 	// read string from file and add to list
 	FILE *fp = stdin;
 	char *str = NULL;
-	while(read_str(fp, &str) == 1) {
+	int err_flag;
+	while((err_flag = read_str(fp, &str)) == 1) {
 		// break if malloc failed
-		if(add_entry(&head, str) == -1)
+		if((err_flag = add_entry(&head, str)) == -1) {
 			break;
+		}
 	}
-
-	print_list(&head);
+	
+	//not print if malloc or realloc failed
+	if(err_flag != -1) {
+		print_list(&head);
+	}
 	free_list(&head);
 	return 0;
 }
