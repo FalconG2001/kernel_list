@@ -1,4 +1,3 @@
-SHELL=/bin/bash
 EXEC = list_sort
 DEPS = list.h mylist.h
 OBJ = link_list.o read_str.o
@@ -16,7 +15,7 @@ read_str.o: read_str.c
 	gcc -c -o $@ $<
 
 question.txt:
-	for i in {1..100}; do echo $$RANDOM; done > question.txt
+	awk 'BEGIN {srand(); for(i = 0; i < 100; i++) printf "%d\n", rand()*10000}' > question.txt
 
 answer.txt: question.txt
 	cat question.txt | sort -n > answer.txt
