@@ -5,7 +5,6 @@
 #include <string.h>
 #include "list.h"
 
-extern int read_str(FILE *fp, char **str);
 
 struct mylist{
 	char *str;
@@ -28,7 +27,8 @@ int add_entry(struct list_head *head, char *str) {
 	struct mylist *new = malloc(sizeof(struct mylist));
 	if(new == NULL) {
 		printf("malloc failed\n");
-		exit(1);
+		free(str);
+		return -1; // return -1 if malloc failed
 	}
 	new->str_length = strlen(str);
 	new->str = str;
@@ -77,9 +77,11 @@ int main()
 	
 	// read string from file and add to list
 	FILE *fp = stdin;
-	char *str = NULL;	
-	while(read_str(fp, &str)) {
-		add_entry(&head, str);
+	char *str = NULL;
+	while(read_str(fp, &str) == 1) {
+		// break if malloc failed
+		if(add_entry(&head, str) == -1)
+			break;
 	}
 
 	print_list(&head);

@@ -1,3 +1,4 @@
+int read_str(FILE *fp, char **str);
 
 // import from linux/types.h
 struct list_head {
@@ -60,6 +61,6 @@ struct hlist_node {
 
 // defined by myself
 
-#define READ_ONCE(x) x
+#define READ_ONCE(x) (x)
 
-#define WRITE_ONCE(x, val) x = val
+#define WRITE_ONCE(x, val) (x) = (val)

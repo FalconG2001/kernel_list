@@ -2,9 +2,9 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-#define kernel_flag 0
+#define KERNEL_FLAG 0
 
-#if kernel_flag == 1
+#if KERNEL_FLAG == 1
 
 #include <linux/types.h>
 #include <linux/stddef.h>
