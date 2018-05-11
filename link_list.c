@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
-
+#include "read_str.h"
 
 struct mylist{
 	char *str;
@@ -78,16 +78,17 @@ int main()
 	// read string from file and add to list
 	FILE *fp = stdin;
 	char *str = NULL;
-	int err_flag;
+	int err_flag = 0;
 	while((err_flag = read_str(fp, &str)) == 1) {
 		// break if malloc failed
-		if((err_flag = add_entry(&head, str)) == -1) {
+		if(err_flag = add_entry(&head, str)) {
 			break;
 		}
+		err_flag = 0; // No error
 	}
 	
 	//not print if malloc or realloc failed
-	if(err_flag != -1) {
+	if(err_flag == 0) {
 		print_list(&head);
 	}
 	free_list(&head);
