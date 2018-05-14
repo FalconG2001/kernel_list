@@ -16,7 +16,7 @@ struct mylist{
 int print_list(struct list_head *head) {
     struct mylist *entry;
     list_for_each_entry(entry, head, list) {
-        printf("%s\n", entry->str);
+        printf("%s", entry->str);
     }
     return 0;
 }
@@ -27,7 +27,6 @@ int add_entry(struct list_head *head, char *str) {
 	struct mylist *new = malloc(sizeof(struct mylist));
 	if(new == NULL) {
 		printf("malloc failed\n");
-		free(str);
 		return -1; // return -1 if malloc failed
 	}
 	new->str_length = strlen(str);
@@ -78,19 +77,28 @@ int main()
 	// read string from file and add to list
 	FILE *fp = stdin;
 	char *str = NULL;
-	int err_flag = 0;
-	while((err_flag = read_str(fp, &str)) == 1) {
-		// break if malloc failed
-		if(err_flag = add_entry(&head, str)) {
+	size_t buf_size;
+	ssize_t len;
+	int ret;
+
+	while(1){
+		// initialize
+		str = NULL;
+		buf_size = 0;
+
+		len = getline(&str, &buf_size, fp);
+		if(len < 0) { // no more input or malloc fail
+			free(str);
 			break;
 		}
-		err_flag = 0; // No error
+		ret = add_entry(&head, str);
+		if(ret != 0) { // add_entry fail
+			free(str);
+			break;
+		}
 	}
 	
-	//not print if malloc or realloc failed
-	if(err_flag == 0) {
-		print_list(&head);
-	}
+	print_list(&head);
 	free_list(&head);
 	return 0;
 }
