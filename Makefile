@@ -1,6 +1,6 @@
 EXEC = list_sort
-DEPS = list.h mylist.h read_str.h
-OBJ = link_list.o read_str.o
+DEPS = list.h mylist.h
+OBJ = link_list.o
 
 all: $(EXEC)
 
